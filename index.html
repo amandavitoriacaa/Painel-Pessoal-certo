@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor Compartilhado</title>
+</head>
+<body>
+
+<h2>Editor Compartilhado</h2>
+<textarea id="editor" style="width:100%; height:300px;"></textarea>
+<br>
+<button onclick="salvar()">Salvar</button>
+
+<script>
+  async function carregar() {
+    const resp = await fetch('/carregar');
+    const texto = await resp.text();
+    document.getElementById('editor').value = texto;
+  }
+
+  async function salvar() {
+    const conteudo = document.getElementById('editor').value;
+    await fetch('/salvar', {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: conteudo
+    });
+    alert('Salvo!');
+  }
+
+  carregar();
+</script>
+
+</body>
+</html>
