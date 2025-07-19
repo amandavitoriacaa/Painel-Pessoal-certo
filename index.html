@@ -1,35 +1,610 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Editor Compartilhado</title>
+<meta charset="UTF-8" />
+<title>Painel Pessoal Completo</title>
+<style>
+  body { font-family: Arial; background: #ffeef5; margin: 0; display: flex; height: 100vh; }
+  nav { width: 220px; background: #ffc0cb; padding: 20px; color: white; }
+  nav button { background: none; border: none; color: white; padding: 10px; width: 100%; text-align: left; cursor: pointer; border-radius: 5px; }
+  nav button:hover { background: #f5a3b3; }
+  main { flex: 1; background: #fff0f5; padding: 20px; overflow-y: auto; }
+  h1, h2, h3, h4 { color: #d6336c; margin-bottom: 5px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th, td { border: 1px solid #f5a3b3; padding: 8px; }
+  input, select { width: 95%; }
+  button.add, button.save { margin-top: 10px; background: #ff69b4; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+  button.delete { background: #ff4d6d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+  #calendar { border: 1px solid #ccc; background: #fff; padding: 10px; margin-bottom: 10px; width: 300px; }
+  .postit { background: #ffd1dc; padding: 10px; margin: 10px 0; border-radius: 8px; box-shadow: 2px 2px 6px rgba(0,0,0,0.1); flex: 1 1 300px; max-width: 300px; }
+  #dashboard { display: flex; gap: 20px; flex-wrap: wrap; }
+  .hidden { display:none; }
+</style>
 </head>
 <body>
 
-<h2>Editor Compartilhado</h2>
-<textarea id="editor" style="width:100%; height:300px;"></textarea>
-<br>
-<button onclick="salvar()">Salvar</button>
+<nav>
+  <h2>Painel</h2>
+  <button onclick="show('inicio')">🏠 Início</button>
+  <button onclick="show('metas')">🎯 Metas</button>
+  <button onclick="show('agenda')">📆 Agenda</button>
+  <button onclick="show('tarefas')">✅ Tarefas</button>
+  <button onclick="show('contas')">💰 Contas</button>
+  <button onclick="show('rotina')">📋 Rotina Semanal</button>
+  <button onclick="show('estudos')">📚 Rotina de Estudos</button>
+  <button onclick="show('aulas')">🎓 Aulas Particulares</button>
+</nav>
+
+<main>
+  <div id="inicio">
+    <h1>Bem-vindo!</h1>
+    <p id="motivacional">"O sucesso é a soma de pequenos esforços repetidos dia após dia."</p>
+    <div id="dashboard">
+      <div id="calendar"></div>
+      <div class="postit" id="postitRotina"></div>
+      <div class="postit" id="postitEstudos"></div>
+      <div class="postit" id="postitAgendaHoje"></div>
+      <div class="postit" id="postitTarefasHoje"></div>
+    </div>
+  </div>
+
+  <div id="metas" class="hidden">
+    <h1>Metas</h1>
+    <table id="metasTable">
+      <tr><th>Meta</th><th>Prazo</th><th>Status</th><th></th></tr>
+    </table>
+    <button class="add" onclick="addRow('metasTable',['text','text','select:Em andamento|Concluído|Pendente'])">Adicionar</button>
+    <button class="save" onclick="saveData('metas')">Salvar</button>
+  </div>
+
+  <div id="agenda" class="hidden">
+    <h1>Agenda</h1>
+    <table id="agendaTable">
+      <tr><th>Dia do mês</th><th>Compromisso</th><th>Horário</th><th></th></tr>
+    </table>
+    <button class="add" onclick="addRow('agendaTable',['number-day','text','text'])">Adicionar</button>
+    <button class="save" onclick="saveData('agenda')">Salvar</button>
+  </div>
+
+  <div id="tarefas" class="hidden">
+    <h1>Tarefas</h1>
+    <table id="tarefasTable">
+      <tr><th>Prioridade</th><th>Tarefa</th><th>Status</th><th></th></tr>
+    </table>
+    <button class="add" onclick="addRow('tarefasTable',['select:Alta|Média|Baixa','text','select:Em aberto|Concluída'])">Adicionar</button>
+    <button class="save" onclick="saveData('tarefas')">Salvar</button>
+  </div>
+
+  <div id="contas" class="hidden">
+    <h1>Contas</h1>
+    <table id="contasTable">
+      <tr><th>Conta</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr>
+    </table>
+    <button class="add" onclick="addRow('contasTable',['text','text','text','select:Pago|Em aberto'])">Adicionar</button>
+    <button class="save" onclick="saveData('contas')">Salvar</button>
+  </div>
+
+  <div id="rotina" class="hidden">
+    <h1>Rotina Semanal</h1>
+    <select id="diaSemana" onchange="loadRotina()">
+      <option>Segunda</option>
+      <option>Terça</option>
+      <option>Quarta</option>
+      <option>Quinta</option>
+      <option>Sexta</option>
+      <option>Sábado</option>
+      <option>Domingo</option>
+    </select>
+    <table id="rotinaTable">
+      <tr><th>Atividade</th><th>Horário</th><th>Status</th><th></th></tr>
+    </table>
+    <button class="add" onclick="addRow('rotinaTable',['text','text','select:Concluída|Em andamento|Não iniciada'])">Adicionar</button>
+    <button class="save" onclick="saveRotina()">Salvar</button>
+  </div>
+
+  <div id="estudos" class="hidden">
+    <h1>Rotina de Estudos</h1>
+    <select id="diaEstudos" onchange="loadEstudos()">
+      <option>Segunda</option>
+      <option>Terça</option>
+      <option>Quarta</option>
+      <option>Quinta</option>
+      <option>Sexta</option>
+      <option>Sábado</option>
+      <option>Domingo</option>
+    </select>
+    <table id="estudosTable">
+      <tr><th>Disciplina/Assunto</th><th>Horário</th><th>Status</th><th></th></tr>
+    </table>
+    <button class="add" onclick="addRow('estudosTable',['text','text','select:Concluído|Em andamento|Não iniciado'])">Adicionar</button>
+    <button class="save" onclick="saveEstudos()">Salvar</button>
+  </div>
+
+  <div id="aulas" class="hidden">
+    <h1>Aulas Particulares</h1>
+    <label for="professorSelect"><strong>Selecione o Aluno:</strong></label><br/>
+    <select id="professorSelect" onchange="showProfessor()">
+      <option value="">-- Escolha --</option>
+      <option value="antonio">Antônio</option>
+      <option value="pedro">Pedro</option>
+    </select>
+
+    <!-- Antônio -->
+    <div id="antonioSection" class="hidden">
+      <h2>Antônio</h2>
+      <label for="antonioMateriaSelect"><strong>Selecione a matéria:</strong></label><br/>
+      <select id="antonioMateriaSelect" onchange="showAntonioMateria()">
+        <option value="">-- Escolha --</option>
+        <option value="matematica">Matemática</option>
+        <option value="fisica">Física</option>
+        <option value="quimica">Química</option>
+      </select>
+
+      <div id="antonioMatematica" class="hidden materia-section">
+        <h3>Matemática</h3>
+        <p><strong>Horário:</strong> <input type="text" id="antonioMatematicaHorario"></p>
+        <h4>Planilha de Aulas Dadas</h4>
+        <table id="antonioMatematicaDadas">
+          <tr><th>Data</th><th>Tema</th><th>Tempo (horas)</th><th></th></tr>
+        </table>
+        <button class="add" onclick="addRow('antonioMatematicaDadas',['text','text','number'])">Adicionar</button>
+        <button class="save" onclick="saveAulas('antonioMatematicaDadas','antonioMatematicaHorario')">Salvar</button>
+        <p><strong>Total horas dadas: </strong><span id="antonioMatematicaTotal">0</span></p>
+
+        <h4>Aulas Planejadas</h4>
+        <table id="antonioMatematicaPlanejadas">
+          <tr><th>Tema</th><th>Status</th><th></th></tr>
+        </table>
+        <button class="add" onclick="addRow('antonioMatematicaPlanejadas',['text','select:Finalizada|Em andamento|Não iniciada'])">Adicionar</button>
+        <button class="save" onclick="saveAulasPlanejadas('antonioMatematicaPlanejadas')">Salvar</button>
+      </div>
+
+      <div id="antonioFisica" class="hidden materia-section">
+        <h3>Física</h3>
+        <p><strong>Horário:</strong> <input type="text" id="antonioFisicaHorario"></p>
+        <h4>Planilha de Aulas Dadas</h4>
+        <table id="antonioFisicaDadas">
+          <tr><th>Data</th><th>Tema</th><th>Tempo (horas)</th><th></th></tr>
+        </table>
+        <button class="add" onclick="addRow('antonioFisicaDadas',['text','text','number'])">Adicionar</button>
+        <button class="save" onclick="saveAulas('antonioFisicaDadas','antonioFisicaHorario')">Salvar</button>
+        <p><strong>Total horas dadas: </strong><span id="antonioFisicaTotal">0</span></p>
+
+        <h4>Aulas Planejadas</h4>
+        <table id="antonioFisicaPlanejadas">
+          <tr><th>Tema</th><th>Status</th><th></th></tr>
+        </table>
+        <button class="add" onclick="addRow('antonioFisicaPlanejadas',['text','select:Finalizada|Em andamento|Não iniciada'])">Adicionar</button>
+        <button class="save" onclick="saveAulasPlanejadas('antonioFisicaPlanejadas')">Salvar</button>
+      </div>
+
+      <div id="antonioQuimica" class="hidden materia-section">
+        <h3>Química</h3>
+        <p><strong>Horário:</strong> <input type="text" id="antonioQuimicaHorario"></p>
+        <h4>Planilha de Aulas Dadas</h4>
+        <table id="antonioQuimicaDadas">
+          <tr><th>Data</th><th>Tema</th><th>Tempo (horas)</th><th></th></tr>
+        </table>
+        <button class="add" onclick="addRow('antonioQuimicaDadas',['text','text','number'])">Adicionar</button>
+        <button class="save" onclick="saveAulas('antonioQuimicaDadas','antonioQuimicaHorario')">Salvar</button>
+        <p><strong>Total horas dadas: </strong><span id="antonioQuimicaTotal">0</span></p>
+
+        <h4>Aulas Planejadas</h4>
+        <table id="antonioQuimicaPlanejadas">
+          <tr><th>Tema</th><th>Status</th><th></th></tr>
+        </table>
+        <button class="add" onclick="addRow('antonioQuimicaPlanejadas',['text','select:Finalizada|Em andamento|Não iniciada'])">Adicionar</button>
+        <button class="save" onclick="saveAulasPlanejadas('antonioQuimicaPlanejadas')">Salvar</button>
+      </div>
+    </div>
+
+    <!-- Pedro -->
+    <div id="pedroSection" class="hidden">
+      <h2>Pedro</h2>
+      <p><strong>Horário:</strong> <input type="text" id="pedroHorario"></p>
+      <h4>Planilha de Aulas Dadas</h4>
+      <table id="pedroDadas">
+        <tr><th>Data</th><th>Tema</th><th>Tempo (horas)</th><th></th></tr>
+      </table>
+      <button class="add" onclick="addRow('pedroDadas',['text','text','number'])">Adicionar</button>
+      <button class="save" onclick="saveAulas('pedroDadas','pedroHorario')">Salvar</button>
+      <p><strong>Total horas dadas: </strong><span id="pedroTotal">0</span></p>
+
+      <h4>Aulas Planejadas</h4>
+      <table id="pedroPlanejadas">
+        <tr><th>Tema</th><th>Status</th><th></th></tr>
+      </table>
+      <button class="add" onclick="addRow('pedroPlanejadas',['text','select:Finalizada|Em andamento|Não iniciada'])">Adicionar</button>
+      <button class="save" onclick="saveAulasPlanejadas('pedroPlanejadas')">Salvar</button>
+    </div>
+
+  </div>
+</main>
 
 <script>
-  async function carregar() {
-    const resp = await fetch('/carregar');
-    const texto = await resp.text();
-    document.getElementById('editor').value = texto;
-  }
+function show(sectionId) {
+  document.querySelectorAll('main > div').forEach(d => d.classList.add('hidden'));
+  document.getElementById(sectionId).classList.remove('hidden');
+  if(sectionId==='inicio') renderDashboard();
+  if(sectionId==='rotina') loadRotina();
+  if(sectionId==='estudos') loadEstudos();
+}
 
-  async function salvar() {
-    const conteudo = document.getElementById('editor').value;
-    await fetch('/salvar', {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain'},
-      body: conteudo
+// Adicionar linha
+function addRow(tableId, types) {
+  const table = document.getElementById(tableId);
+  const row = table.insertRow(-1);
+  types.forEach(type => {
+    const cell = row.insertCell();
+    if(type.startsWith('select:')) {
+      const options = type.split(':')[1].split('|');
+      const select = document.createElement('select');
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.text = opt;
+        select.add(option);
+      });
+      cell.appendChild(select);
+    } else if(type==='checkbox') {
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cell.appendChild(cb);
+    } else if(type==='number') {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.step = '0.1';
+      cell.appendChild(input);
+    } else if(type==='number-day') {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '1';
+      input.max = '31';
+      input.step = '1';
+      input.value = '1';
+      cell.appendChild(input);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text';
+      cell.appendChild(input);
+    }
+  });
+  const delCell = row.insertCell();
+  const delBtn = document.createElement('button');
+  delBtn.className = 'delete';
+  delBtn.textContent = 'Excluir';
+  delBtn.onclick = () => {
+    table.deleteRow(row.rowIndex);
+    if(tableId.includes('Dadas')) updateTotalHoras(tableId);
+  };
+  delCell.appendChild(delBtn);
+}
+
+// Salvar dados (genérico para tabelas simples)
+function saveData(section) {
+  const table = document.getElementById(section + 'Table');
+  const data = [];
+  for(let i=1; i < table.rows.length; i++) {
+    const row = table.rows[i];
+    const rowData = [];
+    for(let j=0; j < row.cells.length - 1; j++) {
+      const input = row.cells[j].querySelector('input, select');
+      if(input) {
+        if(input.type==='checkbox') rowData.push(input.checked);
+        else rowData.push(input.value);
+      }
+    }
+    data.push(rowData);
+  }
+  localStorage.setItem(section, JSON.stringify(data));
+  alert('Dados salvos!');
+}
+
+function loadData(section) {
+  const table = document.getElementById(section + 'Table');
+  if(!table) return;
+  while(table.rows.length > 1) table.deleteRow(1);
+  const data = JSON.parse(localStorage.getItem(section) || '[]');
+  data.forEach(rowData => {
+    addRow(section + 'Table', rowData.map(v => typeof v === 'boolean' ? 'checkbox' : 'text'));
+    const lastRow = table.rows[table.rows.length-1];
+    rowData.forEach((v,i) => {
+      const input = lastRow.cells[i].querySelector('input, select');
+      if(input) {
+        if(input.type==='checkbox') input.checked = v;
+        else input.value = v;
+      }
     });
-    alert('Salvo!');
+  });
+}
+
+// Rotina semanal
+function saveRotina() {
+  const dia = document.getElementById('diaSemana').value;
+  const table = document.getElementById('rotinaTable');
+  const data = [];
+  for(let i=1; i < table.rows.length; i++) {
+    const row = table.rows[i];
+    const rowData = [];
+    for(let j=0; j < row.cells.length - 1; j++) {
+      const input = row.cells[j].querySelector('input, select');
+      if(input) {
+        if(input.type==='checkbox') rowData.push(input.checked);
+        else rowData.push(input.value);
+      }
+    }
+    data.push(rowData);
+  }
+  localStorage.setItem('rotina_' + dia, JSON.stringify(data));
+  alert('Rotina salva!');
+  renderDashboard();
+}
+
+function loadRotina() {
+  const dia = document.getElementById('diaSemana').value;
+  const table = document.getElementById('rotinaTable');
+  while(table.rows.length > 1) table.deleteRow(1);
+  const data = JSON.parse(localStorage.getItem('rotina_' + dia) || '[]');
+  data.forEach(rowData => {
+    addRow('rotinaTable', rowData.map(v => typeof v === 'boolean' ? 'checkbox' : 'text'));
+    const lastRow = table.rows[table.rows.length-1];
+    rowData.forEach((v,i) => {
+      const input = lastRow.cells[i].querySelector('input, select');
+      if(input) {
+        if(input.type === 'checkbox') input.checked = v;
+        else input.value = v;
+      }
+    });
+  });
+}
+
+// Rotina de Estudos
+function saveEstudos() {
+  const dia = document.getElementById('diaEstudos').value;
+  const table = document.getElementById('estudosTable');
+  const data = [];
+  for(let i=1; i < table.rows.length; i++) {
+    const row = table.rows[i];
+    const rowData = [];
+    for(let j=0; j < row.cells.length -1; j++) {
+      const input = row.cells[j].querySelector('input, select');
+      if(input) {
+        if(input.type==='checkbox') rowData.push(input.checked);
+        else rowData.push(input.value);
+      }
+    }
+    data.push(rowData);
+  }
+  localStorage.setItem('estudos_' + dia, JSON.stringify(data));
+  alert('Rotina de estudos salva!');
+  renderDashboard();
+}
+
+function loadEstudos() {
+  const dia = document.getElementById('diaEstudos').value;
+  const table = document.getElementById('estudosTable');
+  while(table.rows.length > 1) table.deleteRow(1);
+  const data = JSON.parse(localStorage.getItem('estudos_' + dia) || '[]');
+  data.forEach(rowData => {
+    addRow('estudosTable', rowData.map(v => typeof v === 'boolean' ? 'checkbox' : 'text'));
+    const lastRow = table.rows[table.rows.length-1];
+    rowData.forEach((v,i) => {
+      const input = lastRow.cells[i].querySelector('input, select');
+      if(input) {
+        if(input.type === 'checkbox') input.checked = v;
+        else input.value = v;
+      }
+    });
+  });
+}
+
+// Dashboard Inicial
+function renderDashboard() {
+  const today = new Date();
+  const diasSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const diaNome = diasSemana[today.getDay()];
+  // Calendário simples do mês atual
+  const mesAno = today.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  let diaAtual = today.getDate();
+
+  // Gera calendário simples (lista dos dias do mês)
+  let calendarHtml = `<h3>${mesAno}</h3><table border="1" style="border-collapse: collapse; width: 300px; background:#fff;">`;
+  calendarHtml += '<tr><th>Dom</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th></tr>';
+
+  let firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+  let lastDate = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+
+  let day = 1;
+  for(let week=0; week<6; week++) {
+    calendarHtml += '<tr>';
+    for(let wd=0; wd<7; wd++) {
+      if(week === 0 && wd < firstDay) {
+        calendarHtml += '<td></td>';
+      } else if(day > lastDate) {
+        calendarHtml += '<td></td>';
+      } else {
+        calendarHtml += `<td style="padding:5px;${day === diaAtual ? 'background:#ffb6c1; font-weight:bold;' : ''}">${day}</td>`;
+        day++;
+      }
+    }
+    calendarHtml += '</tr>';
+    if(day > lastDate) break;
+  }
+  calendarHtml += '</table>';
+
+  document.getElementById('calendar').innerHTML = calendarHtml;
+
+  // Rotina do dia atual
+  const rotina = JSON.parse(localStorage.getItem('rotina_' + diaNome) || '[]');
+  document.getElementById('postitRotina').innerHTML = '<strong>Rotina Semanal:</strong><ul>' + rotina.map(r => `<li>${r[0]} (${r[1]}) [${r[2]}]</li>`).join('') + '</ul>';
+
+  const estudos = JSON.parse(localStorage.getItem('estudos_' + diaNome) || '[]');
+  document.getElementById('postitEstudos').innerHTML = '<strong>Rotina de Estudos:</strong><ul>' + estudos.map(e => `<li>${e[0]} (${e[1]}) [${e[2]}]</li>`).join('') + '</ul>';
+
+  // Compromissos da agenda para o dia de hoje (filtra por dia do mês)
+  const agenda = JSON.parse(localStorage.getItem('agenda') || '[]');
+  const hojeDia = today.getDate().toString();
+  const compromissosHoje = agenda.filter(c => c[0] === hojeDia);
+  if(compromissosHoje.length > 0) {
+    document.getElementById('postitAgendaHoje').innerHTML = '<strong>Compromissos de Hoje (dia '+ hojeDia +'):</strong><ul>' + compromissosHoje.map(c => `<li>${c[1]} às ${c[2]}</li>`).join('') + '</ul>';
+  } else {
+    document.getElementById('postitAgendaHoje').innerHTML = '<strong>Compromissos de Hoje (dia '+ hojeDia +'):</strong><p>Sem compromissos</p>';
   }
 
-  carregar();
+  // Tarefas do dia com prioridade
+  const tarefas = JSON.parse(localStorage.getItem('tarefas') || '[]');
+  if(tarefas.length > 0) {
+    document.getElementById('postitTarefasHoje').innerHTML = '<strong>Tarefas:</strong><ul>' + tarefas.map(t => `<li>[${t[0]}] ${t[1]}</li>`).join('') + '</ul>';
+  } else {
+    document.getElementById('postitTarefasHoje').innerHTML = '<strong>Tarefas:</strong><p>Sem tarefas cadastradas</p>';
+  }
+}
+
+// Aulas particulares - mostrar aluno
+function showProfessor() {
+  const prof = document.getElementById('professorSelect').value;
+  document.getElementById('antonioSection').classList.add('hidden');
+  document.getElementById('pedroSection').classList.add('hidden');
+  if(prof === 'antonio') {
+    document.getElementById('antonioSection').classList.remove('hidden');
+  } else if(prof === 'pedro') {
+    document.getElementById('pedroSection').classList.remove('hidden');
+  }
+  // Reset matérias
+  document.getElementById('antonioMateriaSelect').value = '';
+  document.querySelectorAll('.materia-section').forEach(el => el.classList.add('hidden'));
+}
+
+// Mostrar matéria Antônio
+function showAntonioMateria() {
+  const materia = document.getElementById('antonioMateriaSelect').value;
+  document.querySelectorAll('.materia-section').forEach(el => el.classList.add('hidden'));
+  if(materia) {
+    document.getElementById('antonio' + materia.charAt(0).toUpperCase() + materia.slice(1)).classList.remove('hidden');
+  }
+}
+
+// Aulas particulares - salvar e carregar
+function saveAulas(tableId, horarioId) {
+  const table = document.getElementById(tableId);
+  const horario = document.getElementById(horarioId).value;
+  const data = [];
+  for(let i=1; i < table.rows.length; i++) {
+    const row = table.rows[i];
+    const rowData = [];
+    for(let j=0; j < row.cells.length - 1; j++) {
+      const input = row.cells[j].querySelector('input, select');
+      if(input) {
+        if(input.type === 'checkbox') rowData.push(input.checked);
+        else rowData.push(input.value);
+      }
+    }
+    data.push(rowData);
+  }
+  localStorage.setItem(tableId, JSON.stringify(data));
+  localStorage.setItem(horarioId, horario);
+  alert('Dados salvos!');
+  updateTotalHoras(tableId);
+}
+
+function loadAulas(tableId, horarioId, totalId) {
+  const table = document.getElementById(tableId);
+  const horarioInput = document.getElementById(horarioId);
+  while(table.rows.length > 1) table.deleteRow(1);
+  const data = JSON.parse(localStorage.getItem(tableId) || '[]');
+  data.forEach(rowData => {
+    addRow(tableId, rowData.map(v => typeof v === 'boolean' ? 'checkbox' : 'text'));
+    const lastRow = table.rows[table.rows.length - 1];
+    rowData.forEach((v,i) => {
+      const input = lastRow.cells[i].querySelector('input, select');
+      if(input) {
+        if(input.type === 'checkbox') input.checked = v;
+        else input.value = v;
+      }
+    });
+  });
+  const horario = localStorage.getItem(horarioId);
+  if(horario) horarioInput.value = horario;
+  updateTotalHoras(tableId);
+}
+
+function updateTotalHoras(tableId) {
+  const table = document.getElementById(tableId);
+  let total = 0;
+  for(let i=1; i < table.rows.length; i++) {
+    const input = table.rows[i].cells[2].querySelector('input');
+    if(input) {
+      const val = parseFloat(input.value);
+      if(!isNaN(val)) total += val;
+    }
+  }
+  let totalId = '';
+  if(tableId === 'antonioMatematicaDadas') totalId = 'antonioMatematicaTotal';
+  else if(tableId === 'antonioFisicaDadas') totalId = 'antonioFisicaTotal';
+  else if(tableId === 'antonioQuimicaDadas') totalId = 'antonioQuimicaTotal';
+  else if(tableId === 'pedroDadas') totalId = 'pedroTotal';
+  if(totalId) document.getElementById(totalId).textContent = total.toFixed(1);
+}
+
+function saveAulasPlanejadas(tableId) {
+  const table = document.getElementById(tableId);
+  const data = [];
+  for(let i=1; i < table.rows.length; i++) {
+    const row = table.rows[i];
+    const rowData = [];
+    for(let j=0; j < row.cells.length - 1; j++) {
+      const input = row.cells[j].querySelector('input, select');
+      if(input) {
+        if(input.type === 'checkbox') rowData.push(input.checked);
+        else rowData.push(input.value);
+      }
+    }
+    data.push(rowData);
+  }
+  localStorage.setItem(tableId, JSON.stringify(data));
+  alert('Dados salvos!');
+}
+
+function loadAulasPlanejadas(tableId) {
+  const table = document.getElementById(tableId);
+  while(table.rows.length > 1) table.deleteRow(1);
+  const data = JSON.parse(localStorage.getItem(tableId) || '[]');
+  data.forEach(rowData => {
+    addRow(tableId, rowData.map(v => typeof v === 'boolean' ? 'checkbox' : 'text'));
+    const lastRow = table.rows[table.rows.length - 1];
+    rowData.forEach((v,i) => {
+      const input = lastRow.cells[i].querySelector('input, select');
+      if(input) {
+        if(input.type === 'checkbox') input.checked = v;
+        else input.value = v;
+      }
+    });
+  });
+}
+
+window.onload = () => {
+  show('inicio');
+  loadData('metas');
+  loadData('agenda');
+  loadData('tarefas');
+  loadData('contas');
+  loadRotina();
+  loadEstudos();
+
+  loadAulas('antonioMatematicaDadas','antonioMatematicaHorario');
+  loadAulasPlanejadas('antonioMatematicaPlanejadas');
+
+  loadAulas('antonioFisicaDadas','antonioFisicaHorario');
+  loadAulasPlanejadas('antonioFisicaPlanejadas');
+
+  loadAulas('antonioQuimicaDadas','antonioQuimicaHorario');
+  loadAulasPlanejadas('antonioQuimicaPlanejadas');
+
+  loadAulas('pedroDadas','pedroHorario');
+  loadAulasPlanejadas('pedroPlanejadas');
+};
 </script>
 
 </body>
 </html>
+
